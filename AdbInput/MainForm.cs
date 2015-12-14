@@ -18,6 +18,18 @@ namespace AdbInput
 	/// </summary>
 	public partial class MainForm : Form
 	{
+		private static readonly string ALLOWED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:";
+		private static readonly Dictionary<char, int> EVENT_CHARS = new Dictionary<char, int>
+	    {
+	        { '#', 18 },
+			{ '*', 17 },
+			{ ' ', 62 },
+			{ '.', 56 },
+			{ '@', 77 },
+			{ ':', 77 },
+			{ '/', 76 },
+	    };
+	
 		public MainForm()
 		{
 			//
@@ -28,17 +40,18 @@ namespace AdbInput
 		
 		void SubmitButtonClick(object sender, EventArgs e)
 		{
-			int i = 0;
-			String parts = "";
 			System.Diagnostics.Process process = new System.Diagnostics.Process();
 			System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo();
+			startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+			startInfo.FileName = "adb.exe";
+			
+			int i = 0;
+			String parts = "";
 			var text = adbTextBox.Text;
 			foreach (var part in text)
 			{
 				i++;
-				if (part >= 'a' && part <='z' ||
-				    part >= 'A' && part <='Z' ||
-				    part >= '0' && part <='9' )
+				if ( ALLOWED_CHARS.Contains(part.ToString()) )
 				{
 					parts += part;
 					if (i < text.Length)
@@ -46,28 +59,20 @@ namespace AdbInput
 				}
 				if (parts.Length > 0)
 				{
-					startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
 					startInfo.Arguments = "shell input text \""+parts+"\"";
-					startInfo.FileName = "adb.exe";
 					process.StartInfo = startInfo;
 					process.Start();
 					process.WaitForExit();
 				}
+				parts = "";
 				
-				startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
-				startInfo.FileName = "adb.exe";
-				if (part == '#')
-					startInfo.Arguments = "shell input keyevent 18";
-				else if (part == '*')
-					startInfo.Arguments = "shell input keyevent 17";
-				else if (part == ' ')
-					startInfo.Arguments = "shell input keyevent 62";
+				if (EVENT_CHARS.ContainsKey(part))
+					startInfo.Arguments = "shell input keyevent " + EVENT_CHARS[part];
 				else
 					continue;
 				process.StartInfo = startInfo;
 				process.Start();
 				process.WaitForExit();
-				parts = "";
 			}
 		}
 	}
